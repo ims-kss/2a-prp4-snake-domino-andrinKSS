@@ -17,3 +17,49 @@ canvas {
     height: 90vw;
     max-height: 600px;
 }
+
+#gameOverMessage {
+    position: fixed;
+    /* über allem */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    background-color: rgba(0, 0, 0, 0.7);
+    /* dunkler, halbtransparenter Hintergrund */
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    color: white;
+    font-size: 20px;
+    flex-direction: column;
+    z-index: 1000;
+    /* sicherstellen, dass es über allem liegt */
+
+
+
+}
+
+#playerNameInput {
+    margin-top: 20px;
+    padding: 10px;
+    font-size: 16px;
+    border: 2px solid #fff;
+    background-color: #222;
+    color: #fff;
+    border-radius: 5px;
+}
+
+#saveScoreButton {
+    margin-top: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    background-color: #28a745;
+    color: #fff;
+    border-radius: 5px;
+    cursor: pointer;
+}

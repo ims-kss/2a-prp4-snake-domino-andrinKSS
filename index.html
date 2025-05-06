@@ -12,6 +12,17 @@
     <h1>Snake Spiel</h1>
     <canvas id="gameCanvas"></canvas>
     <p id="score">Punkte: 0</p>
+    <div id="gameOverMessage" style=display:none;>
+        <p>Game Over! Du hast <span id="finalScore"></span> Punkte erreicht.</p>
+        <label for="playerNameInput">Dein Name:</label>
+        <input type="text" id="playerNameInput">
+        <button id="saveScoreButton">Speichern</button>
+    </div>
+
+    <h2>Bestenliste</h2>
+    <ul id="highscoreList"></ul>
+
+
     <script src="js/script.js"></script>
 </body>
 

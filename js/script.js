@@ -1,5 +1,19 @@
 class SnakeGame {
+
+
+
+
     constructor(canvasId, scoreId) {
+
+
+
+        // pause machen
+        this.isPaused = false;
+
+
+
+
+
         // Canvas- und Score-Elemente abrufen
         this.canvas = document.getElementById(canvasId);
         this.context = this.canvas.getContext("2d");
@@ -25,6 +39,8 @@ class SnakeGame {
 
         // Spielzyklus alle 100ms
         this.loop = setInterval(this.update.bind(this), 100);
+
+
     }
 
     // Passt die Grösse des Spielfelds an die Fenstergrösse an (max. 600px)
@@ -49,6 +65,12 @@ class SnakeGame {
     // Pfeiltasten zur Steuerung der Schlange
     handleKey(e) {
         const { x, y } = this.velocity;
+
+        // Erweiterung der Pause-Funktion
+        if (e.key === " ") {
+            this.isPaused = !this.isPaused; // Pause umschalten
+            return;
+        }
         // Keine 180°-Wende zulassen
         switch (e.key) {
             case "ArrowUp": if (y === 0) this.velocity = { x: 0, y: -1 }; break;
@@ -60,7 +82,8 @@ class SnakeGame {
 
     // Spielzyklus: Bewegungslogik, Kollisionen, Zeichnen
     update() {
-        if (this.gameOver) return;
+        //Erweiterung der Pause-Funktion
+        if (this.gameOver || this.isPaused) return;
 
         // Neuer Kopf basierend auf aktueller Richtung
         const head = { ...this.snake[0] };
@@ -141,6 +164,8 @@ class SnakeGame {
         // Punktestand aktualisieren
         this.scoreElement.textContent = "Punkte: " + this.score;
     }
+
+
 }
 
 // Startet das Spiel nach dem Laden der Seite
