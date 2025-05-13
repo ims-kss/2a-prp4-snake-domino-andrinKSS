@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="de">
 
 <head>
@@ -11,6 +10,15 @@
 <body>
     <h1>Snake Spiel</h1>
     <canvas id="gameCanvas"></canvas>
+    <div id="controls" class="mobile-only">
+        <button id="upBtn">⬆️</button>
+        <div>
+            <button id="leftBtn">⬅️</button>
+            <button id="downBtn">⬇️</button>
+            <button id="rightBtn">➡️</button>
+        </div>
+    </div>
+
     <p id="score">Punkte: 0</p>
     <div id="gameOverMessage" style=display:none;>
         <p>Game Over! Du hast <span id="finalScore"></span> Punkte erreicht.</p>

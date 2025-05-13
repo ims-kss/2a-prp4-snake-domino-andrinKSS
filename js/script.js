@@ -1,18 +1,9 @@
 class SnakeGame {
 
-
-
-
     constructor(canvasId, scoreId) {
-
-
 
         // pause machen
         this.isPaused = false;
-
-
-
-
 
         // Canvas- und Score-Elemente abrufen
         this.canvas = document.getElementById(canvasId);
@@ -25,7 +16,7 @@ class SnakeGame {
 
         // Schlange beginnt in der Mitte des Feldes
         this.snake = [{ x: 10, y: 10 }];
-        this.velocity = { x: 0, y: 0 }; // Startbewegung: stillstehend
+        this.velocity = { x: 0, y: 0 }; // Startbewegung: nach rechts
 
         this.food = this.randomPosition(); // Zufällige Startposition für Futter
         this.score = 0;
@@ -34,13 +25,44 @@ class SnakeGame {
         // Tastatur- und Resize-Ereignisse registrieren
         this.bindEvents();
 
+        // Speicher des Namens beim klicken auf den Button
+        document.getElementById("saveScoreButton").addEventListener("click", () => {
+            const name = document.getElementById("playerNameInput");
+            const obj = {
+                name: name.value || "Anonym",
+                score: this.score,
+                date: new Date().toISOString()
+            };
+
+            const scores = JSON.parse(localStorage.getItem("scores")) || [];
+            scores.push(obj);
+            localStorage.setItem("scores", JSON.stringify(scores));
+
+            this.renderHighscores(); // Liste aktualisieren
+        });
+
+        // Steuerungsbuttons
+        document.getElementById("upBtn")?.addEventListener("click", () => {
+            if (this.velocity.y === 0) this.velocity = { x: 0, y: -1 };
+        });
+        document.getElementById("downBtn")?.addEventListener("click", () => {
+            if (this.velocity.y === 0) this.velocity = { x: 0, y: 1 };
+        });
+        document.getElementById("leftBtn")?.addEventListener("click", () => {
+            if (this.velocity.x === 0) this.velocity = { x: -1, y: 0 };
+        });
+        document.getElementById("rightBtn")?.addEventListener("click", () => {
+            if (this.velocity.x === 0) this.velocity = { x: 1, y: 0 };
+        });
+
         // Spielfeld an Bildschirmgrösse anpassen
         this.resizeCanvas();
 
         // Spielzyklus alle 100ms
         this.loop = setInterval(this.update.bind(this), 100);
 
-
+        // Bestenliste anzeigen
+        this.renderHighscores();
     }
 
     // Passt die Grösse des Spielfelds an die Fenstergrösse an (max. 600px)
@@ -93,8 +115,11 @@ class SnakeGame {
         // Überprüfung auf Kollision (Wand oder sich selbst)
         if (this.isCollision(head)) {
             this.gameOver = true;
-            alert("Game Over! Punkte: " + this.score);
             clearInterval(this.loop);
+
+            // Game-Over-Dialog anzeigen und Score setzen
+            document.getElementById("finalScore").textContent = this.score;
+            document.getElementById("gameOverMessage").style.display = "flex";
             return;
         }
 
@@ -165,6 +190,28 @@ class SnakeGame {
         this.scoreElement.textContent = "Punkte: " + this.score;
     }
 
+    // Bestenliste anzeigen
+    renderHighscores() {
+        const highscoreList = document.getElementById("highscoreList");
+        highscoreList.innerHTML = "";
+
+        const scores = JSON.parse(localStorage.getItem("scores")) || [];
+
+        // Sortieren: nach Score absteigend, bei Gleichstand: älterer zuerst
+        scores.sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            return new Date(a.date) - new Date(b.date);
+        });
+
+        const maxEntries = 5; // oder dynamisch: Math.floor(window.innerHeight / 100);
+        const topScores = scores.slice(0, maxEntries);
+
+        topScores.forEach(entry => {
+            const li = document.createElement("li");
+            li.textContent = `${entry.name}: ${entry.score} Punkte – ${new Date(entry.date).toLocaleString()}`;
+            highscoreList.appendChild(li);
+        });
+    }
 
 }
 

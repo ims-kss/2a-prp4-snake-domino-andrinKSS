@@ -38,9 +38,6 @@ canvas {
     flex-direction: column;
     z-index: 1000;
     /* sicherstellen, dass es über allem liegt */
-
-
-
 }
 
 #playerNameInput {
@@ -62,4 +59,81 @@ canvas {
     color: #fff;
     border-radius: 5px;
     cursor: pointer;
+}
+
+#highscoreList {
+    list-style: none;
+    padding: 0;
+    width: 90%;
+    max-width: 600px;
+    text-align: left;
+}
+
+#highscoreList li {
+    background: #222;
+    padding: 10px;
+    margin: 5px 0;
+    border-left: 5px solid #28a745;
+    border-radius: 4px;
+}
+
+/* standardmässig NICHT anzeigen */
+.mobile-only {
+    display: none;
+}
+
+/* Bestenliste fest am rechten Bildschirmrand */
+h2 {
+    position: fixed;
+    top: 100px;
+    right: 210;
+    margin: 0;
+    z-index: 500;
+}
+
+#highscoreList {
+    position: fixed;
+    top: 140px;
+    /* leicht unter der Überschrift */
+    right: 150;
+    width: 250px;
+    max-height: 80vh;
+    overflow-y: auto;
+    background-color: transparent;
+    z-index: 500;
+}
+
+/* Nur anzeigen, wenn der Bildschirm max. 768px breit ist */
+@media screen and (max-width: 768px) {
+    .mobile-only {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    #controls button {
+        width: 60px;
+        height: 60px;
+        margin: 5px;
+        font-size: 24px;
+        border-radius: 10px;
+        border: none;
+        background-color: #333;
+        color: white;
+        cursor: pointer;
+    }
+
+    #controls div {
+        display: flex;
+        gap: 10px;
+    }
+
+    /* Responsive: Liste springt unter das Spielfeld */
+    h2,
+    #highscoreList {
+        position: static;
+        width: 90%;
+        max-width: 600px;
+        margin-top: 20px;
+    }
 }
