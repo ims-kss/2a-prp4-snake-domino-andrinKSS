@@ -5,6 +5,8 @@ class SnakeGame {
         // pause machen
         this.isPaused = false;
 
+
+
         // Canvas- und Score-Elemente abrufen
         this.canvas = document.getElementById(canvasId);
         this.context = this.canvas.getContext("2d");
@@ -63,6 +65,23 @@ class SnakeGame {
 
         // Bestenliste anzeigen
         this.renderHighscores();
+
+        // NEU: Futter-Wert und Countdown
+        this.foodValue = 1; // Anfangswert: 1 Punkt
+        this.foodCountdown = 0; // Sekunden-Countdown für Spezialfutter
+        this.specialPhase = false; // Ist Spezialphase gerade aktiv?
+        this.specialColor = "#ff0"; // Gelb als Farbe für Spezial-Schlange
+        this.foodTimer = null; // Damit wir den Timer stoppen können
+        this.growAmount = 0; // Wie viel die Schlange noch wachsen soll
+
+
+        // Spezialfutter gleich zu Beginn starten
+        this.prepareSpecialFood();
+
+
+
+
+
     }
 
     // Passt die Grösse des Spielfelds an die Fenstergrösse an (max. 600px)
@@ -128,11 +147,29 @@ class SnakeGame {
 
         // Überprüfen, ob Futter gefressen wurde
         if (head.x === this.food.x && head.y === this.food.y) {
-            this.score++; // Punktestand erhöhen
+            const punkte = this.foodValue; // Merken, bevor neues Futter vorbereitet wird
+            this.score += punkte;
+            this.growAmount += punkte;
+
+
+            if (this.foodTimer) clearInterval(this.foodTimer); // Countdown stoppen (falls nötig)
+
+            this.prepareSpecialFood(); // Neues Spezialfutter vorbereiten
+
+
+
+            // Punktestand erhöhen
             this.food = this.randomPosition(); // Neues Futter platzieren
+
+            this.growAmount += this.foodValue; // So viele Segmente soll sie wachsen
+
         } else {
-            // Kein Futter: Letztes Segment entfernen
-            this.snake.pop();
+            if (this.growAmount > 0) {
+                this.growAmount--; // Ein Segment „gratis“ behalten (nicht kürzen)
+            } else {
+                this.snake.pop(); // Nur wenn nichts mehr zu wachsen übrig ist
+            }
+
         }
 
         // Spielfeld neu zeichnen
@@ -167,7 +204,8 @@ class SnakeGame {
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         // Schlange zeichnen (grün)
-        this.context.fillStyle = "#0f0";
+        this.context.fillStyle = this.specialPhase ? this.specialColor : "#0f0"; // Spezialfarbe ODER grün abkürzung von einem if-else
+
         this.snake.forEach(segment => {
             this.context.fillRect(
                 segment.x * this.tileSize,
@@ -186,8 +224,32 @@ class SnakeGame {
             this.tileSize
         );
 
-        // Punktestand aktualisieren
+        // Wenn Spezialphase aktiv ist:
+        if (this.specialPhase) { // ich überprüfe ob die Phase aktiv ist
+
+            this.context.fillStyle = this.specialColor; // fals die Phase aktiv ist, wird die Farbe auf gelb gesetzt 
+            this.snake.forEach(segment => { // forEach ist eine Schleife die alle Segmente der Schlange durchläuft
+                this.context.fillRect( // zeichnen der Schlange von oben kopiert
+                    segment.x * this.tileSize,
+                    segment.y * this.tileSize,
+                    this.tileSize,
+                    this.tileSize
+                );
+            });
+
+            // Countdown als Text anzeigen
+            this.context.fillStyle = "#fff"; // alles was ich danach schreibe wird weiss
+            this.context.font = "16px Arial"; // die Schriftart und grösse habe ich festgelegt
+            this.context.fillText(
+                `Bonus: ${this.foodValue} Punkte – ${this.foodCountdown}s`,
+                10, // die x-Position
+                20 // die y-Position
+            );
+        }
         this.scoreElement.textContent = "Punkte: " + this.score;
+
+
+
     }
 
     // Bestenliste anzeigen
@@ -212,6 +274,34 @@ class SnakeGame {
             highscoreList.appendChild(li);
         });
     }
+
+    // NEU: Spezialfutter vorbereiten
+    prepareSpecialFood() {
+
+        const values = [1, 5, 10]; // Mögliche Punktzahlen
+        this.foodValue = values[Math.floor(Math.random() * values.length)]; // wählt eine zufällige zahl (1, 5 oder 10) aus und speichert sie in foodValue
+
+        if (this.foodValue > 1) { // wenn die Zahl grösser als 1 ist
+            this.specialPhase = true; // specialPhase ist aktiv wird von false auf true gesetzt
+            this.foodCountdown = this.foodValue === 5 ? 10 : 4; // kurzform eines if-else was bei 5 10 sekunden und bei 10 4 sekunden zählt
+
+            if (this.foodTimer) clearInterval(this.foodTimer);  //falls der Timer schon läuft, stoppen mit clearInterval
+
+            this.foodTimer = setInterval(() => { // setInterval ist eine Funktion die alle 1000ms (1 Sekunde) aufgerufen wird
+
+                this.foodCountdown--; // wenn 1 Sekunde vergangen ist, wird foodCountdown um 1 verringert (z.B 5 -> 4 -> 3 -> 2 -> 1 -> 0)
+                if (this.foodCountdown <= 0) { //Die Zeit ist abgelaufen
+                    this.foodValue = 1; // zurücksetzen auf 1
+                    this.specialPhase = false; //specialPhase ist nicht mehr aktiv
+                    clearInterval(this.foodTimer); // Timer stoppen
+                    this.foodTimer = null;
+                }
+            }, 1000);
+        } else {
+            this.specialPhase = false; // Kein Spezialfutter
+        }
+    }
+
 
 }
 
