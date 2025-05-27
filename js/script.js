@@ -139,10 +139,12 @@ class SnakeGame {
             this.score += punkte;
             this.growAmount += punkte;
 
-            if (this.foodTimer) clearInterval(this.foodTimer);
+            if (this.foodTimer) clearInterval(this.foodTimer); // Timer zurücksetzen, falls er bereits läuft
 
-            this.prepareNextFood = true;
-        } else if (this.growAmount > 0) {
+            this.prepareNextFood = true; // Es wird ein "Signal" gesetzt, damit am Ende dieses Spielzyklus das nächste Futter vorbereitet wird
+        } else if (this.growAmount > 0) { // Wenn kein Futter gefressen wurde, aber growAmount > 0, wächst die Schlange um 1 Segment weiter.
+
+            // growAmount zählt langsam herunter, bis die Schlange „fertig gewachsen“ ist.
             this.growAmount--;
         }
 
@@ -182,7 +184,7 @@ class SnakeGame {
         this.context.fillStyle = "#000";
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        this.context.fillStyle = this.specialPhase ? this.specialColor : "#0f0";
+        this.context.fillStyle = this.specialPhase ? this.specialColor : "#0f0"; // wenn spezialphase aktiv ist, dann wird die farbe gelb sonst grün
         this.snake.forEach(segment => {
             this.context.fillRect(
                 segment.x * this.tileSize,
@@ -266,25 +268,25 @@ class SnakeGame {
 
     // Neues Futter setzen und ggf. Spezialphase starten
     placeNewFood() {
-        this.food = this.randomPosition();
-        this.foodValue = this.nextFoodValue;
+        this.food = this.randomPosition(); // Neue Position für Futter generieren
+        this.foodValue = this.nextFoodValue; // Futterwert setzen
 
-        if (this.foodValue > 1) {
-            this.specialPhase = true;
-            this.foodCountdown = this.foodValue === 5 ? 10 : 4;
+        if (this.foodValue > 1) { // Wenn Futterwert grösser als 1, Spezialphase starten
+            this.specialPhase = true; // Spezialphase aktivieren
+            this.foodCountdown = this.foodValue === 5 ? 10 : 4; // 10 Sekunden für 5 Punkte, 4 Sekunden für 10 Punkte
 
-            if (this.foodTimer) clearInterval(this.foodTimer);
-            this.foodTimer = setInterval(() => {
-                this.foodCountdown--;
-                if (this.foodCountdown <= 0) {
-                    this.foodValue = 1;
-                    this.specialPhase = false;
-                    clearInterval(this.foodTimer);
-                    this.foodTimer = null;
+            if (this.foodTimer) clearInterval(this.foodTimer); // Timer zurücksetzen, falls er bereits läuft
+            this.foodTimer = setInterval(() => { // Countdown für Spezialfutter
+                this.foodCountdown--; // Sekunde abziehen
+                if (this.foodCountdown <= 0) { // Wenn der Countdown abgelaufen ist
+                    this.foodValue = 1; // Zurücksetzen auf normales Futter
+                    this.specialPhase = false; // Spezialphase beenden
+                    clearInterval(this.foodTimer); // Timer stoppen
+                    this.foodTimer = null; // Timer zurücksetzen
                 }
-            }, 1000);
+            }, 1000); // 1000ms = 1 Sekunde
         } else {
-            this.specialPhase = false;
+            this.specialPhase = false; // Spezialphase beenden
         }
     }
 
