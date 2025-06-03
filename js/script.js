@@ -19,13 +19,18 @@ class SnakeGame {
         this.velocity = { x: 0, y: 0 }; // Startbewegung: nach rechts
 
         this.food = this.randomPosition(); // Zufällige Startposition für Futter
-        this.score = 0;
+        this.score = 1;
         this.gameOver = false;
 
         this.startTime = null;
         this.gameDuration = 0;
         this.gameStarted = false;
         this.obstacles = []; // Liste der Hindernisse
+
+        this.slowDownActive = false; // Verlangsamung aktiv
+        this.slowDownFood = null; // Position des Spezialfutters
+        this.slowDownCounter = 0; // Zählt normale Futter für Spawn-Bedingung
+        this.verlangsamungsFutterZyklus = Math.floor(Math.random() * 4) + 3; // 3–6 Futter
 
         this.bindEvents();
 
@@ -169,7 +174,6 @@ class SnakeGame {
             this.score += punkte;
             this.growAmount += punkte;
 
-            // FEHLER BEHEBEN: Logik für Extraleben korrigiert
             this.foodCounter++;
             if (this.foodCounter >= this.extraLifeChance) {
                 this.lives++;
@@ -180,11 +184,34 @@ class SnakeGame {
             if (this.foodTimer) clearInterval(this.foodTimer); // Timer zurücksetzen, falls er bereits läuft
 
             this.prepareNextFood = true; // Es wird ein "Signal" gesetzt, damit am Ende dieses Spielzyklus das nächste Futter vorbereitet wird
+            // ► Verlangsamung beenden, sobald wieder normales Futter gegessen wurde
+            if (this.slowDownActive) {
+                this.slowDownActive = false;
+                clearInterval(this.loop);
+                this.loop = setInterval(this.update.bind(this), 100);  // Standard-Speed
+            }
+
         } else if (this.growAmount > 0) { // Wenn kein Futter gefressen wurde, aber growAmount > 0, wächst die Schlange um 1 Segment weiter.
 
             // growAmount zählt langsam herunter, bis die Schlange „fertig gewachsen“ ist.
             this.growAmount--;
         }
+
+        if (
+            this.slowDownFood &&
+            nextHead.x === this.slowDownFood.x &&
+            nextHead.y === this.slowDownFood.y
+        ) {
+            this.slowDownFood = null;                   // pinkes Futter vom Feld nehmen
+            this.slowDownActive = true;                 // Effekt aktivieren
+
+            this.slowDownCounter = 0;
+            this.verlangsamungsFutterZyklus = Math.floor(Math.random() * 4) + 3; // 3–6
+
+            clearInterval(this.loop);                   // Spieltempo halbieren
+            this.loop = setInterval(this.update.bind(this), 200);
+        }
+
 
         this.draw();
 
@@ -259,10 +286,27 @@ class SnakeGame {
         // Schlange zeichnen mit korrekter Farbe
         if (this.foodCounter === this.extraLifeChance - 1) {
             this.context.fillStyle = "#f00"; // Rot für Extraleben
+            // Hier zB: Farbe des Kopfes der Schlange bei Verlangsamungsfutter
         } else if (this.specialPhase) {
             this.context.fillStyle = this.specialColor; // Gelb für Spezialphase
         } else {
-            this.context.fillStyle = "#0f0"; // Grün normal
+            this.snake.forEach((segment, index) => {
+                if (index === 0 && (this.slowDownActive || this.slowDownFood)) {
+                    this.context.fillStyle = "#00ffff"; // Hellblauer Kopf
+                }
+                else if (this.specialPhase) {
+                    this.context.fillStyle = this.specialColor; // Gelb
+                } else {
+                    this.context.fillStyle = "#0f0"; // Normal grün
+                }
+                this.context.fillRect(
+                    segment.x * this.tileSize,
+                    segment.y * this.tileSize,
+                    this.tileSize,
+                    this.tileSize
+                );
+            });
+
         }
 
         this.snake.forEach(segment => {
@@ -296,30 +340,46 @@ class SnakeGame {
             this.tileSize
         );
 
-        // Bonus-Text anzeigen
-        if (this.specialPhase || this.foodCounter === this.extraLifeChance - 1) {
-            this.context.fillStyle = "#fff";
-            this.context.font = "16px Arial";
+        // Eigenschafts-Text anzeigen
 
-            if (this.foodCounter === this.extraLifeChance - 1 && this.specialPhase) {
-                this.context.fillText(
-                    `Bonus: ${this.foodValue} Punkte – ${this.foodCountdown}s + Extraleben`,
-                    10,
-                    20
-                );
-            } else if (this.specialPhase) {
-                this.context.fillText(
-                    `Bonus: ${this.foodValue} Punkte – ${this.foodCountdown}s`,
-                    10,
-                    20
-                );
-            } else {
-                this.context.fillText(
-                    `Bonus: Extraleben`,
-                    10,
-                    20
-                );
-            }
+        this.context.fillStyle = "#fff";
+        this.context.font = "16px Arial";
+
+        if (this.foodCounter === this.extraLifeChance - 1 && this.specialPhase) {
+            this.context.fillText(
+                `Eigenschaft: ${this.foodValue} Punkte – ${this.foodCountdown}s + Extraleben`,
+                10,
+                20
+            );
+        } else if (this.specialPhase) {
+            this.context.fillText(
+                `Eigenschaft: ${this.foodValue} Punkte – ${this.foodCountdown}s`,
+                10,
+                20
+            );
+        } else if (this.foodCounter === this.extraLifeChance - 1) {
+            this.context.fillText(
+                `Eigenschaft: Extraleben`,
+                10,
+                20
+            );
+        } else {
+            this.context.fillText(
+                `Eigenschaft: 1 Punkt`,
+                10,
+                20
+            );
+        }
+
+        // Spezialfutter zeichnen
+        if (this.slowDownFood) {
+            this.context.fillStyle = "#FFC0CB"; // Pink
+            this.context.fillRect(
+                this.slowDownFood.x * this.tileSize,
+                this.slowDownFood.y * this.tileSize,
+                this.tileSize,
+                this.tileSize
+            );
         }
 
         // Punkte anzeigen
@@ -329,6 +389,10 @@ class SnakeGame {
         this.context.fillStyle = "#fff";
         this.context.font = "16px Arial";
         this.context.fillText(`Leben: ${this.lives}`, 10, this.canvas.height - 10);
+        this.context.fillText(
+            `Verlangsamung: ${this.slowDownActive ? "aktiv" : (this.slowDownFood ? "bereit" : "aus")}`,
+            10, 40
+        );
     }
 
     // Bestenliste anzeigen
@@ -368,6 +432,15 @@ class SnakeGame {
     // Neues Futter setzen und ggf. Spezialphase starten
     placeNewFood() {
         this.food = this.randomPosition(); // Neue Position für Futter generieren
+        if (this.slowDownFood === null) {
+            this.slowDownCounter++;
+
+            if (this.slowDownCounter >= this.verlangsamungsFutterZyklus) {
+                this.slowDownCounter = 0;
+                this.verlangsamungsFutterZyklus = Math.floor(Math.random() * 4) + 3; // 3–6
+                this.slowDownFood = this.randomFreePosition();                       // pinkes Futter setzen
+            }
+        }
         this.foodValue = this.nextFoodValue;
 
         if (this.foodValue > 1) {
