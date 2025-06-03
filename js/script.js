@@ -283,33 +283,30 @@ class SnakeGame {
             );
         });
 
-        // Schlange zeichnen mit korrekter Farbe
-        if (this.foodCounter === this.extraLifeChance - 1) {
-            this.context.fillStyle = "#f00"; // Rot für Extraleben
-            // Hier zB: Farbe des Kopfes der Schlange bei Verlangsamungsfutter
-        } else if (this.specialPhase) {
-            this.context.fillStyle = this.specialColor; // Gelb für Spezialphase
-        } else {
-            this.snake.forEach((segment, index) => {
-                if (index === 0 && (this.slowDownActive || this.slowDownFood)) {
-                    this.context.fillStyle = "#00ffff"; // Hellblauer Kopf
+        // Schlange zeichnen (ausschliesslich mit if/else)
+        this.snake.forEach((segment, index) => {
+
+            // ---------------- Kopf ----------------
+            if (index === 0) {
+                if (this.slowDownFood) {
+                    this.context.fillStyle = "#00ffff";     // Hellblau bei Verlangsamung
+                } else if (this.specialPhase) {
+                    this.context.fillStyle = this.specialColor; // Gelb in der Spezialphase
                 }
-                else if (this.specialPhase) {
-                    this.context.fillStyle = this.specialColor; // Gelb
+            }
+
+            // ---------------- Körper ----------------
+            else {
+                if (this.foodCounter === this.extraLifeChance - 1) {
+                    this.context.fillStyle = "#f00";        // Rot, wenn Extraleben in Aussicht
+                } else if (this.specialPhase) {
+                    this.context.fillStyle = this.specialColor; // Gelb in der Spezialphase
                 } else {
-                    this.context.fillStyle = "#0f0"; // Normal grün
+                    this.context.fillStyle = "#0f0";        // Normal grün
                 }
-                this.context.fillRect(
-                    segment.x * this.tileSize,
-                    segment.y * this.tileSize,
-                    this.tileSize,
-                    this.tileSize
-                );
-            });
+            }
 
-        }
-
-        this.snake.forEach(segment => {
+            // Segment zeichnen
             this.context.fillRect(
                 segment.x * this.tileSize,
                 segment.y * this.tileSize,
