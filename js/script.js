@@ -22,7 +22,10 @@ class SnakeGame {
         this.score = 0;
         this.gameOver = false;
 
-        // Tastatur- und Resize-Ereignisse registrieren
+        this.startTime = null;
+        this.gameDuration = 0;
+        this.gameStarted = false;
+
         this.bindEvents();
 
         // Speicher des Namens beim klicken auf den Button
@@ -31,6 +34,7 @@ class SnakeGame {
             const obj = {
                 name: name.value || "Anonym",
                 score: this.score,
+                time: parseFloat((this.gameDuration - 0.1).toFixed(1)), // Fix für Zeitversatz
                 date: new Date().toISOString()
             };
 
@@ -102,6 +106,12 @@ class SnakeGame {
             this.isPaused = !this.isPaused;
             return;
         }
+
+        if (!this.gameStarted && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+            this.startTime = Date.now();
+            this.gameStarted = true;
+        }
+
         switch (e.key) {
             case "ArrowUp": if (y === 0) this.velocity = { x: 0, y: -1 }; break;
             case "ArrowDown": if (y === 0) this.velocity = { x: 0, y: 1 }; break;
@@ -120,6 +130,7 @@ class SnakeGame {
 
         if (this.isCollision(nextHead)) {
             this.gameOver = true;
+            this.gameDuration = this.startTime ? (Date.now() - this.startTime) / 1000 : 0;
             clearInterval(this.loop);
             document.getElementById("finalScore").textContent = this.score;
             document.getElementById("gameOverMessage").style.display = "flex";
@@ -203,6 +214,12 @@ class SnakeGame {
             this.context.fillStyle = "#800080"; // rot für Spezialfutter (10 Punkte)
         }
 
+        if (this.gameStarted && !this.gameOver && !this.isPaused) {
+            this.gameDuration = (Date.now() - this.startTime) / 1000;
+        }
+
+        document.getElementById("timeDisplay").textContent = `Zeit: ${this.gameDuration.toFixed(1)}s`;
+
         this.context.fillRect(
             this.food.x * this.tileSize,
             this.food.y * this.tileSize,
@@ -241,6 +258,7 @@ class SnakeGame {
         const scores = JSON.parse(localStorage.getItem("scores")) || [];
         scores.sort((a, b) => {
             if (b.score !== a.score) return b.score - a.score;
+            if (a.time !== b.time) return a.time - b.time;
             return new Date(a.date) - new Date(b.date);
         });
 
@@ -249,7 +267,7 @@ class SnakeGame {
 
         topScores.forEach(entry => {
             const li = document.createElement("li");
-            li.textContent = `${entry.name}: ${entry.score} Punkte – ${new Date(entry.date).toLocaleString()}`;
+            li.textContent = `${entry.name}: ${entry.score} Punkte in ${entry.time.toFixed(1)}sec – Vom ${new Date(entry.date).toLocaleString()} `;
             highscoreList.appendChild(li);
         });
     }
@@ -289,7 +307,6 @@ class SnakeGame {
             this.specialPhase = false; // Spezialphase beenden
         }
     }
-
 }
 
 // Startet das Spiel nach dem Laden der Seite
