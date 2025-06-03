@@ -25,6 +25,7 @@ class SnakeGame {
         this.startTime = null;
         this.gameDuration = 0;
         this.gameStarted = false;
+        this.obstacles = []; // Liste der Hindernisse
 
         this.bindEvents();
 
@@ -86,7 +87,7 @@ class SnakeGame {
         // Neue Eigenschaften für Leben
         this.lives = 1;
         this.foodWithLive = false;
-        this.foodCounter = 0; // FEHLER BEHEBEN: Initialisierung hinzugefügt
+        this.foodCounter = 0;
         this.extraLifeChance = Math.floor(Math.random() * 6) + 5; // Zufällig zwischen 5 und 10
     }
 
@@ -200,7 +201,8 @@ class SnakeGame {
         return (
             pos.x < 0 || pos.x >= this.tileCount ||
             pos.y < 0 || pos.y >= this.tileCount ||
-            this.snake.slice(1).some(segment => segment.x === pos.x && segment.y === pos.y)
+            this.snake.slice(1).some(segment => segment.x === pos.x && segment.y === pos.y) ||
+            this.obstacles.some(obs => obs.x === pos.x && obs.y === pos.y)
         );
     }
 
@@ -212,7 +214,29 @@ class SnakeGame {
                 x: Math.floor(Math.random() * this.tileCount),
                 y: Math.floor(Math.random() * this.tileCount)
             };
-        } while (this.snake.some(segment => segment.x === position.x && segment.y === position.y));
+        } while (
+            this.snake.some(segment => segment.x === position.x && segment.y === position.y) ||
+            this.obstacles?.some(obs => obs.x === position.x && obs.y === position.y) // 🧱 Vermeide Hindernisse
+        );
+        return position;
+    }
+
+    randomFreePosition() {
+        let position;
+        let tries = 0;
+        do {
+            position = {
+                x: Math.floor(Math.random() * this.tileCount),
+                y: Math.floor(Math.random() * this.tileCount)
+            };
+            tries++;
+            if (tries > 100) return null; // Sicherheit: keine Endlosschleife
+        } while (
+            (position.x === 10 && position.y === 10) || // 🛑 Vermeide Mittelpunkt
+            this.snake.some(seg => seg.x === position.x && seg.y === position.y) ||
+            (this.food && this.food.x === position.x && this.food.y === position.y) ||
+            this.obstacles.some(obs => obs.x === position.x && obs.y === position.y)
+        );
         return position;
     }
 
@@ -220,6 +244,17 @@ class SnakeGame {
     draw() {
         this.context.fillStyle = "#000";
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Hindernisse zeichnen
+        this.context.fillStyle = "#888"; // Grau
+        this.obstacles.forEach(obs => {
+            this.context.fillRect(
+                obs.x * this.tileSize,
+                obs.y * this.tileSize,
+                this.tileSize,
+                this.tileSize
+            );
+        });
 
         // Schlange zeichnen mit korrekter Farbe
         if (this.foodCounter === this.extraLifeChance - 1) {
@@ -351,6 +386,11 @@ class SnakeGame {
             }, 1000); // 1000ms = 1 Sekunde
         } else {
             this.specialPhase = false; // Spezialphase beenden
+        }
+        // Hindernis alle 3 Futter
+        if (this.foodCounter % 3 === 0) {
+            const obstacle = this.randomFreePosition();
+            if (obstacle) this.obstacles.push(obstacle);
         }
     }
 }
