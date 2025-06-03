@@ -148,6 +148,10 @@ class SnakeGame {
                 this.snake = [{ x: 10, y: 10 }];
                 this.velocity = { x: 0, y: 0 };
                 this.growAmount = 0; // WICHTIG: Wachstum zurücksetzen
+
+                // Zeichne die Schlange sofort neu und verlasse die Funktion
+                this.draw();
+                return; // Verhindert weitere Verarbeitung in diesem Update
             }
         }
 
