@@ -82,6 +82,12 @@ class SnakeGame {
         // Spezialfutter gleich zu Beginn vorbereiten und setzen
         this.prepareSpecialFood();
         this.placeNewFood();
+
+        // Neue Eigenschaften für Leben
+        this.lives = 1;
+        this.foodWithLive = false;
+        this.foodCounter = 0; // FEHLER BEHEBEN: Initialisierung hinzugefügt
+        this.extraLifeChance = Math.floor(Math.random() * 6) + 5; // Zufällig zwischen 5 und 10
     }
 
     // Passt die Grösse des Spielfelds an die Fenstergrösse an (max. 600px)
@@ -129,12 +135,20 @@ class SnakeGame {
         nextHead.y += this.velocity.y;
 
         if (this.isCollision(nextHead)) {
-            this.gameOver = true;
-            this.gameDuration = this.startTime ? (Date.now() - this.startTime) / 1000 : 0;
-            clearInterval(this.loop);
-            document.getElementById("finalScore").textContent = this.score;
-            document.getElementById("gameOverMessage").style.display = "flex";
-            return;
+            this.lives--;
+            if (this.lives <= 0) {
+                this.gameOver = true;
+                this.gameDuration = this.startTime ? (Date.now() - this.startTime) / 1000 : 0;
+                clearInterval(this.loop);
+                document.getElementById("finalScore").textContent = this.score;
+                document.getElementById("gameOverMessage").style.display = "flex";
+                return;
+            } else {
+                // Reset snake position when losing a life
+                this.snake = [{ x: 10, y: 10 }];
+                this.velocity = { x: 0, y: 0 };
+                this.growAmount = 0; // WICHTIG: Wachstum zurücksetzen
+            }
         }
 
         // Wenn kein Wachstum vorgesehen ist, entferne das letzte Segment
@@ -149,6 +163,14 @@ class SnakeGame {
             const punkte = this.foodValue;
             this.score += punkte;
             this.growAmount += punkte;
+
+            // FEHLER BEHEBEN: Logik für Extraleben korrigiert
+            this.foodCounter++;
+            if (this.foodCounter >= this.extraLifeChance) {
+                this.lives++;
+                this.foodCounter = 0;
+                this.extraLifeChance = Math.floor(Math.random() * 6) + 5;
+            }
 
             if (this.foodTimer) clearInterval(this.foodTimer); // Timer zurücksetzen, falls er bereits läuft
 
@@ -195,7 +217,15 @@ class SnakeGame {
         this.context.fillStyle = "#000";
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        this.context.fillStyle = this.specialPhase ? this.specialColor : "#0f0"; // wenn spezialphase aktiv ist, dann wird die farbe gelb sonst grün
+        // Schlange zeichnen mit korrekter Farbe
+        if (this.foodCounter === this.extraLifeChance - 1) {
+            this.context.fillStyle = "#f00"; // Rot für Extraleben
+        } else if (this.specialPhase) {
+            this.context.fillStyle = this.specialColor; // Gelb für Spezialphase
+        } else {
+            this.context.fillStyle = "#0f0"; // Grün normal
+        }
+
         this.snake.forEach(segment => {
             this.context.fillRect(
                 segment.x * this.tileSize,
@@ -211,7 +241,7 @@ class SnakeGame {
         } else if (this.foodValue === 5) {
             this.context.fillStyle = "#00f"; // Blau für Spezialfutter (5 Punkte)
         } else if (this.foodValue === 10) {
-            this.context.fillStyle = "#800080"; // rot für Spezialfutter (10 Punkte)
+            this.context.fillStyle = "#800080"; // Lila für Spezialfutter (10 Punkte)
         }
 
         if (this.gameStarted && !this.gameOver && !this.isPaused) {
@@ -227,27 +257,39 @@ class SnakeGame {
             this.tileSize
         );
 
-        if (this.specialPhase) {
-            this.context.fillStyle = this.specialColor;
-            this.snake.forEach(segment => {
-                this.context.fillRect(
-                    segment.x * this.tileSize,
-                    segment.y * this.tileSize,
-                    this.tileSize,
-                    this.tileSize
-                );
-            });
-
+        // Bonus-Text anzeigen
+        if (this.specialPhase || this.foodCounter === this.extraLifeChance - 1) {
             this.context.fillStyle = "#fff";
             this.context.font = "16px Arial";
-            this.context.fillText(
-                `Bonus: ${this.foodValue} Punkte – ${this.foodCountdown}s`,
-                10,
-                20
-            );
+
+            if (this.foodCounter === this.extraLifeChance - 1 && this.specialPhase) {
+                this.context.fillText(
+                    `Bonus: ${this.foodValue} Punkte – ${this.foodCountdown}s + Extraleben`,
+                    10,
+                    20
+                );
+            } else if (this.specialPhase) {
+                this.context.fillText(
+                    `Bonus: ${this.foodValue} Punkte – ${this.foodCountdown}s`,
+                    10,
+                    20
+                );
+            } else {
+                this.context.fillText(
+                    `Bonus: Extraleben`,
+                    10,
+                    20
+                );
+            }
         }
 
+        // Punkte anzeigen
         this.scoreElement.textContent = "Punkte: " + this.score;
+
+        // Leben anzeigen (IMMER)
+        this.context.fillStyle = "#fff";
+        this.context.font = "16px Arial";
+        this.context.fillText(`Leben: ${this.lives}`, 10, this.canvas.height - 10);
     }
 
     // Bestenliste anzeigen
@@ -287,11 +329,11 @@ class SnakeGame {
     // Neues Futter setzen und ggf. Spezialphase starten
     placeNewFood() {
         this.food = this.randomPosition(); // Neue Position für Futter generieren
-        this.foodValue = this.nextFoodValue; // Futterwert setzen
+        this.foodValue = this.nextFoodValue;
 
-        if (this.foodValue > 1) { // Wenn Futterwert grösser als 1, Spezialphase starten
-            this.specialPhase = true; // Spezialphase aktivieren
-            this.foodCountdown = this.foodValue === 5 ? 10 : 4; // 10 Sekunden für 5 Punkte, 4 Sekunden für 10 Punkte
+        if (this.foodValue > 1) {
+            this.specialPhase = true;
+            this.foodCountdown = this.foodValue === 5 ? 10 : 4;
 
             if (this.foodTimer) clearInterval(this.foodTimer); // Timer zurücksetzen, falls er bereits läuft
             this.foodTimer = setInterval(() => { // Countdown für Spezialfutter
