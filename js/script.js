@@ -292,6 +292,10 @@ class SnakeGame {
                     this.context.fillStyle = "#00ffff";     // Hellblau bei Verlangsamung
                 } else if (this.specialPhase) {
                     this.context.fillStyle = this.specialColor; // Gelb in der Spezialphase
+                } else if (this.foodCounter === this.extraLifeChance - 1) {
+                    this.context.fillStyle = "#f00";        // Rot, wenn Extraleben in Aussicht
+                } else {
+                    this.context.fillStyle = "#0f0";        // Normal grün
                 }
             }
 
